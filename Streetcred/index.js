@@ -16,9 +16,11 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
 
 const CONN_ID = 'cb79ecf0-9f84-459a-b608-073a7ed90bac';
 
-const VER_ID = 'cd6c88a2-51ba-4fae-afc0-93f7cd248722'; // Positive Test Result Verification
+// const VER_ID = 'cd6c88a2-51ba-4fae-afc0-93f7cd248722'; // Positive Test Result Verification
+const VER_ID = 'e7e5ce0d-c50f-4e2e-a785-0a597b4a42fb'; // Negative Test Result Verification
 const POLICY_ID = '5d401288-4d61-4190-261a-08d7de69f4ca'; // Positive Test Result Policy
 const VER_DEF_ID = '4a9b8374-86da-409d-2619-08d7de69f4ca'; // Positive Test Result Definition
+const MSG_ID = '846390b7-72b3-4454-9110-c0eeaa022623';
 
 // how do we set lint rules in AF? e.g., using an undeclared variable
 let connectionId = '';
@@ -83,72 +85,51 @@ module.exports = async function (context, req) {
       console.log('\n');
     };
 
-    const execute = async (functionName) => {
-      let data;
-      try {
-        switch (functionName) {
-          case 'msg':
-            data = await messages.listMessages(connectionId);
-            break;
-          case 'pol':
-            data = await verifications.getPolicy(policyId);
-            break;
-        }
-        console.log('Data:');
-        console.log(data);
-        return data;
-      } catch (e) {
-        if (e instanceof ASSERT.AssertionError) {
-          context.log.error(e.message);
-          return { error: e.message };
-        } else {
-          return e;
-        }
-      }
-    };
-
-    //   listOrganizations();
-
-    //   createVerificationPolicy();
+    //
+    // STEP 1: get arguments ready for specific API calls
+    //
     let functionName = req.query.name;
     switch (functionName) {
-      // Verifcation Policy Section
+      // Verifcation/Policy Section
       case 'pol':
       case 'polList':
-      case 'offerProof':
+      case 'proof':
         connectionId = req.query.connectionId
           ? req.query.connectionId
           : CONN_ID;
         policyId = req.query.policyId ? req.query.policyId : POLICY_ID;
-        // if (policyId) {
-        switch (functionName) {
-          case 'pol':
-            respond(await execute('pol'));
-            break;
-          case 'polList':
-            context.log('Enter listVerificationPolicies()...');
-            f = client.listVerificationPolicies();
-            context.log('Leave listVerificationPolicies()...');
-            break;
 
-          case 'offerProof':
-            break;
-        }
-        // and if you forget to await your async function, you will get this (more realistic error):
-        // Warning: Unexpected call to 'log' on the context object after function execution has completed. Please check for asynchronous calls that are not awaited or calls to 'done' made before function execution completes. Function name: Streetcred. Invocation Id: 3a243fd8-0b84-49b8-9de0-385e8896d715. Learn more: https://go.microsoft.com/fwlink/?linkid=2097909
-        // respond(
-        //   // forget to await execute() and you won't see any reponse
-        //   await execute(f)
-        // );
+        console.log('executing ', functionName);
+        // forget to await execute() and you won't see any reponse
+        respond(await execute(functionName));
         break;
 
+      // Messaging  Section
       case 'msg':
-        context.log('Enter listMessages()...');
-        connectionId = req.query.connectionId
-          ? req.query.connectionId
-          : CONN_ID;
-        respond(await execute('msg'));
+      case 'msgList':
+      case 'msgLast':
+      case 'msgSend':
+        switch (functionName) {
+          case 'msg':
+            messageId = req.query.messageId ? req.query.messageId : MSG_ID;
 
+          default:
+            connectionId = req.query.connectionId
+              ? req.query.connectionId
+              : CONN_ID;
+            break;
+        }
+
+        respond(await execute(functionName));
+
+        break;
+
+      case 'ver':
+        verificationId = req.query.verificationId
+          ? req.query.verificationId
+          : VER_ID;
+        console.log('verificationId:', verificationId);
+        respond(await execute(functionName));
         break;
 
       case 'conn':
@@ -164,20 +145,6 @@ module.exports = async function (context, req) {
           );
         }
         context.log('Leaving getConnection()...');
-        break;
-
-      case 'ver':
-        context.log('Enter getVerification()...');
-        //*Payload:
-        // Identifies an offered a proof request. Used to derefence it's proof results
-        // verificationId: string;
-        verificationId = req.query.verificationId
-          ? req.query.verificationId
-          : VER_ID;
-        console.log('verificationId:', verificationId);
-        respond(await execute(client.getVerification(verificationId)));
-
-        context.log('Leave getVerification()...');
         break;
 
       case 'v4conn':
@@ -223,20 +190,78 @@ module.exports = async function (context, req) {
         break;
     }
 
-    function respond(response) {
-      context.log('response:');
-      if (response.error) {
-        context.log.error(response);
-      } else {
-        context.log(response);
+    //
+    // STEP 2: pass arguments to API call in type wrapper
+    //
+    async function execute(functionName) {
+      let data;
+      try {
+        switch (functionName) {
+          case 'msg':
+            data = await messages.getMessage(messageId);
+            break;
+          case 'msgSend':
+            data = await messages.sendMessage(connectionId);
+            break;
+          case 'msgList':
+            data = await messages.listMessages(connectionId);
+            break;
+          case 'msgLast':
+            data = await messages.getLastMessage(connectionId);
+            break;
+          case 'pol':
+            data = await verifications.getPolicy(policyId);
+            break;
+          case 'polList':
+            data = await verifications.getPolicyList();
+            break;
+          case 'proof':
+            data = await verifications.offerVerification(
+              connectionId,
+              policyId
+            );
+            break;
+          case 'ver':
+            let allDetails = 0;
+            data = await verifications.getVerification(
+              verificationId,
+              allDetails
+            );
+            break;
+        }
+        console.log('Data:');
+        console.log(data);
+        //return results to Step 1 so it can pass them on to Step 3
+        return data;
+      } catch (e) {
+        if (e instanceof ASSERT.AssertionError) {
+          context.log.error(e.message);
+          return { error: e.message };
+        } else {
+          return e;
+        }
       }
-      context.res = {
-        status: 200,
-        body: { response: response },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
+    }
+
+    //
+    // STEP 3: return results from streetcred API to client
+    //
+    function respond(response) {
+      if (response) {
+        context.log('response:');
+        if (response.error) {
+          context.log.error(response);
+        } else {
+          context.log(response);
+        }
+        context.res = {
+          status: 200,
+          body: { response: response },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+      }
     }
   }
 };
