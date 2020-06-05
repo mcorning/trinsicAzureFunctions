@@ -1,4 +1,9 @@
+// debugging is buggy. do we need this in local.settings.json?     "languageWorkers:node:arguments": "--inspect=5858"
+const ASSERT = require('assert');
+
 const verifications = require('./verifications');
+const messages = require('./messages');
+
 const {
   AgencyServiceClient,
   Credentials,
@@ -78,31 +83,76 @@ module.exports = async function (context, req) {
       console.log('\n');
     };
 
-    const execute = async (functionPayload) => {
+    const execute = async (functionName) => {
       let data;
       try {
-        data = await functionPayload;
+        switch (functionName) {
+          case 'msg':
+            data = await messages.listMessages(connectionId);
+            break;
+          case 'pol':
+            data = await verifications.getPolicy(policyId);
+            break;
+        }
         console.log('Data:');
         console.log(data);
         return data;
-      } catch (err) {
-        context.log.error('ERROR', err);
-        // This rethrown exception will be handled by the Functions Runtime and will only fail the individual invocation
-        throw err;
+      } catch (e) {
+        if (e instanceof ASSERT.AssertionError) {
+          context.log.error(e.message);
+          return { error: e.message };
+        } else {
+          return e;
+        }
       }
     };
 
     //   listOrganizations();
 
     //   createVerificationPolicy();
+    let functionName = req.query.name;
+    switch (functionName) {
+      // Verifcation Policy Section
+      case 'pol':
+      case 'polList':
+      case 'offerProof':
+        connectionId = req.query.connectionId
+          ? req.query.connectionId
+          : CONN_ID;
+        policyId = req.query.policyId ? req.query.policyId : POLICY_ID;
+        // if (policyId) {
+        switch (functionName) {
+          case 'pol':
+            respond(await execute('pol'));
+            break;
+          case 'polList':
+            context.log('Enter listVerificationPolicies()...');
+            f = client.listVerificationPolicies();
+            context.log('Leave listVerificationPolicies()...');
+            break;
 
-    switch (req.query.name) {
+          case 'offerProof':
+            break;
+        }
+        // and if you forget to await your async function, you will get this (more realistic error):
+        // Warning: Unexpected call to 'log' on the context object after function execution has completed. Please check for asynchronous calls that are not awaited or calls to 'done' made before function execution completes. Function name: Streetcred. Invocation Id: 3a243fd8-0b84-49b8-9de0-385e8896d715. Learn more: https://go.microsoft.com/fwlink/?linkid=2097909
+        // respond(
+        //   // forget to await execute() and you won't see any reponse
+        //   await execute(f)
+        // );
+        break;
+
+      case 'msg':
+        context.log('Enter listMessages()...');
+        connectionId = req.query.connectionId
+          ? req.query.connectionId
+          : CONN_ID;
+        respond(await execute('msg'));
+
+        break;
+
       case 'conn':
         context.log('Enter getConnection()...');
-
-        //*Payload:
-        // The required connection identifier:
-        // connectionId: string;
         connectionId = req.query.connectionId
           ? req.query.connectionId
           : CONN_ID;
@@ -116,24 +166,6 @@ module.exports = async function (context, req) {
         context.log('Leaving getConnection()...');
         break;
 
-      case 'msg':
-        context.log('Enter listMessages()...');
-        //*Payload:
-        // The required connection identifier:
-        // connectionId: string;
-        connectionId = req.query.connectionId
-          ? req.query.connectionId
-          : CONN_ID;
-        if (connectionId) {
-          respond(await execute(client.listMessages(connectionId)));
-        } else {
-          respond(
-            'You need to pass a connectionId string to call client.listMessages()'
-          );
-        }
-        context.log('Leaving listMessages()...');
-        break;
-
       case 'ver':
         context.log('Enter getVerification()...');
         //*Payload:
@@ -143,13 +175,8 @@ module.exports = async function (context, req) {
           ? req.query.verificationId
           : VER_ID;
         console.log('verificationId:', verificationId);
-        if (verificationId) {
-          respond(await execute(client.getVerification(verificationId)));
-        } else {
-          respond(
-            'You need to pass a verificationId string to client.getVerification(). You will obtain a verificationId when you offer a credential holder a proof request. You then use the verificationId to dereference the proof results.'
-          );
-        }
+        respond(await execute(client.getVerification(verificationId)));
+
         context.log('Leave getVerification()...');
         break;
 
@@ -183,42 +210,6 @@ module.exports = async function (context, req) {
         context.log('Leave listVerificationsForConnection()...');
         break;
 
-      case 'pol':
-        // and if you forget to await your async function, you will get this (more realistic error):
-        // Warning: Unexpected call to 'log' on the context object after function execution has completed. Please check for asynchronous calls that are not awaited or calls to 'done' made before function execution completes. Function name: Streetcred. Invocation Id: 3a243fd8-0b84-49b8-9de0-385e8896d715. Learn more: https://go.microsoft.com/fwlink/?linkid=2097909
-        respond(
-          await execute(await verifications.getPolicy(context, req, POLICY_ID))
-        );
-        break;
-
-      case 'polList':
-        context.log('Enter listVerificationPolicies()...');
-        respond(await execute(client.listVerificationPolicies()));
-        context.log('Leave listVerificationPolicies()...');
-        break;
-
-      case 'offer':
-        connectionId = req.query.connectionId
-          ? req.query.connectionId
-          : CONN_ID;
-
-        policyId = req.query.policyId ? req.query.policyId : POLICY_ID;
-        if (connectionId && policyId) {
-          console.log('connectionId:', connectionId, 'policyId:', policyId);
-          respond(
-            await execute(
-              // if you get the parameter order wrong, you will see this error:
-              // ERROR { Error: {"error":"Object reference not set to an instance of an object.","errorType":"NullReferenceException"}
-              client.sendVerificationFromPolicy(connectionId, policyId)
-            )
-          );
-        } else {
-          respond(
-            'You need to pass connectionId & policyId strings to client.sendVerificationFromPolicy(). You will obtain a verificationId when you offer a credential holder a proof request. You then use the verificationId to dereference the proof results.'
-          );
-        }
-        break;
-
       case 'invite':
         const invitation = await client.createConnection({
           connectionInvitationParameters: {},
@@ -233,7 +224,12 @@ module.exports = async function (context, req) {
     }
 
     function respond(response) {
-      context.log('result', response);
+      context.log('response:');
+      if (response.error) {
+        context.log.error(response);
+      } else {
+        context.log(response);
+      }
       context.res = {
         status: 200,
         body: { response: response },
