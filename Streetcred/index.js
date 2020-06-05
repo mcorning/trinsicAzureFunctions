@@ -3,6 +3,7 @@ const ASSERT = require('assert');
 
 const verifications = require('./verifications');
 const messages = require('./messages');
+const connections = require('./connections');
 
 const {
   AgencyServiceClient,
@@ -90,10 +91,23 @@ module.exports = async function (context, req) {
     //
     let functionName = req.query.name;
     switch (functionName) {
+      // Connections Section
+      case 'connGet':
+      case 'connDel':
+        connectionId = req.query.connectionId
+          ? req.query.connectionId
+          : CONN_ID;
+        respond(await execute(functionName));
+        break;
+      case 'connList':
+      case 'connAdd':
+        respond(await execute(functionName));
+        break;
+
       // Verifcation/Policy Section
       case 'pol':
       case 'polList':
-      case 'proof':
+      case 'proofOffer':
         connectionId = req.query.connectionId
           ? req.query.connectionId
           : CONN_ID;
@@ -197,6 +211,19 @@ module.exports = async function (context, req) {
       let data;
       try {
         switch (functionName) {
+          case 'connAdd':
+            data = await connections.createConnection();
+            break;
+          case 'connDel':
+            data = await connections.deleteConnection(connectionId);
+            break;
+          case 'connGet':
+            data = await connections.getConnection(connectionId);
+            break;
+          case 'connList':
+            data = await connections.listConnections();
+            break;
+
           case 'msg':
             data = await messages.getMessage(messageId);
             break;
@@ -209,13 +236,14 @@ module.exports = async function (context, req) {
           case 'msgLast':
             data = await messages.getLastMessage(connectionId);
             break;
+
           case 'pol':
             data = await verifications.getPolicy(policyId);
             break;
           case 'polList':
             data = await verifications.getPolicyList();
             break;
-          case 'proof':
+          case 'proofOffer':
             data = await verifications.offerVerification(
               connectionId,
               policyId
@@ -229,7 +257,7 @@ module.exports = async function (context, req) {
             );
             break;
         }
-        console.log('Data:');
+        console.log('execute() returns:');
         console.log(data);
         //return results to Step 1 so it can pass them on to Step 3
         return data;
@@ -238,6 +266,7 @@ module.exports = async function (context, req) {
           context.log.error(e.message);
           return { error: e.message };
         } else {
+          context.log.error(e.message);
           return e;
         }
       }
@@ -249,19 +278,15 @@ module.exports = async function (context, req) {
     function respond(response) {
       if (response) {
         context.log('response:');
-        if (response.error) {
-          context.log.error(response);
-        } else {
-          context.log(response);
-        }
-        context.res = {
-          status: 200,
-          body: { response: response },
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        };
+        context.log(response);
       }
+      context.res = {
+        status: 200,
+        body: { response: response },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
     }
   }
 };
