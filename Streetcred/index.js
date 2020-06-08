@@ -4,6 +4,7 @@ const ASSERT = require('assert');
 const verifications = require('./verifications');
 const messages = require('./messages');
 const connections = require('./connections');
+const credentials = require('./credentials');
 
 const {
   AgencyServiceClient,
@@ -22,12 +23,15 @@ const VER_ID = 'e7e5ce0d-c50f-4e2e-a785-0a597b4a42fb'; // Negative Test Result V
 const POLICY_ID = '5d401288-4d61-4190-261a-08d7de69f4ca'; // Positive Test Result Policy
 const VER_DEF_ID = '4a9b8374-86da-409d-2619-08d7de69f4ca'; // Positive Test Result Definition
 const MSG_ID = '846390b7-72b3-4454-9110-c0eeaa022623';
+const STATE = 'Offered';
 
 // how do we set lint rules in AF? e.g., using an undeclared variable
 let connectionId = '';
+let credentialId = '';
 let policyId = '';
 let verificationId = '';
 let definitionId = '';
+let state = '';
 
 function listError(e) {
   console.log(e.message);
@@ -35,7 +39,11 @@ function listError(e) {
 }
 
 module.exports = async function (context, req) {
-  if (req.query.name || (req.body && req.body.name)) {
+  if (req.body) {
+    if (req.body.credential) {
+    }
+  }
+  if (req.query.name) {
     const listOrganizations = async () => {
       var result = await client.listTenants().catch((e) => console.log(e));
 
@@ -101,6 +109,27 @@ module.exports = async function (context, req) {
         break;
       case 'connList':
       case 'connAdd':
+      case 'connDelAllInv':
+        respond(await execute(functionName));
+        break;
+
+      // Credential Section
+      case 'credDel':
+        credentialId = req.query.credentialId;
+        respond(await execute(functionName));
+        break;
+      case 'credList':
+        connectionId = req.query.connectionId
+          ? req.query.connectionId
+          : CONN_ID
+          ? CONN_ID
+          : '';
+        definitionId = req.query.definitionId
+          ? req.query.definitionId
+          : VER_DEF_ID
+          ? VER_DEF_ID
+          : '';
+        state = req.query.state ? req.query.state : STATE ? STATE : '';
         respond(await execute(functionName));
         break;
 
@@ -144,6 +173,13 @@ module.exports = async function (context, req) {
           : VER_ID;
         console.log('verificationId:', verificationId);
         respond(await execute(functionName));
+        break;
+      case 'verDelAll':
+        connectionId = req.query.connectionId
+          ? req.query.connectionId
+          : CONN_ID;
+        respond(await execute(functionName));
+
         break;
 
       case 'conn':
@@ -217,11 +253,25 @@ module.exports = async function (context, req) {
           case 'connDel':
             data = await connections.deleteConnection(connectionId);
             break;
+          case 'connDelAllInv':
+            data = await connections.deleteAllInvitations();
+            break;
           case 'connGet':
             data = await connections.getConnection(connectionId);
             break;
           case 'connList':
             data = await connections.listConnections();
+            break;
+
+          case 'credDel':
+            data = await credentials.deleteCredential(credentialId);
+            break;
+          case 'credList':
+            data = await credentials.listCredentials(
+              connectionId,
+              state,
+              definitionId
+            );
             break;
 
           case 'msg':
@@ -256,6 +306,14 @@ module.exports = async function (context, req) {
               allDetails
             );
             break;
+          case 'verDelAll':
+            data = await verifications.listVerifications(connectionId);
+            let ct = data.length;
+            data.forEach(async function (verification) {
+              await verifications.delVerification(verification.verificationId);
+            });
+            data = `Deleted all ${ct} verifications for ${connectionId}`;
+            break;
         }
         console.log('execute() returns:');
         console.log(data);
@@ -278,7 +336,7 @@ module.exports = async function (context, req) {
     function respond(response) {
       if (response) {
         context.log('response:');
-        context.log(response);
+        context.log(response[0]);
       }
       context.res = {
         status: 200,

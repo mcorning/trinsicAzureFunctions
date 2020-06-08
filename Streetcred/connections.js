@@ -68,6 +68,19 @@ const deleteConnection = async function (connectionId) {
   );
 };
 
+const deleteAllInvitations = async function () {
+  console.log(`Enter deleteAllInvitations()...`);
+  let invites = await client.listConnections({
+    AgencyServiceClientListConnectionsOptionalParams: {
+      state: 'Invited',
+    },
+  });
+  invites.forEach(async (invite) => {
+    await client.deleteConnection(invite.connectionId);
+  });
+  console.log(`...Leave deleteAllInvitations() does not return a result:`);
+};
+
 const getConnection = async function (connectionId) {
   console.log(`Enter getConnection('${connectionId}')...`);
   ASSERT.ok(
@@ -94,6 +107,7 @@ const listConnections = async function () {
 module.exports = {
   createConnection,
   deleteConnection,
+  deleteAllInvitations,
   getConnection,
   listConnections,
   check,

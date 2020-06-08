@@ -57,6 +57,23 @@ async function offerVerification(connectionId, policyId) {
   return result;
 }
 
+async function delVerification(verificationId) {
+  ASSERT.ok(
+    verificationId,
+    'You need to pass a separate verificationId string to getVerification()'
+  );
+
+  console.log(`Enter getVerification('${verificationId}')...`);
+
+  // if you get the parameter order wrong, you will see this error:
+  // ERROR { Error: {"error":"Object reference not set to an instance of an object.","errorType":"NullReferenceException"}
+  let results = await client.deleteVerification(verificationId);
+  console.log(`Leave getVerification('${verificationId}') with result:`);
+
+  console.log(results);
+  return results;
+}
+
 async function getVerification(verificationId, allDetails) {
   ASSERT.ok(
     verificationId,
@@ -84,10 +101,20 @@ async function getVerification(verificationId, allDetails) {
   console.log(result);
   return result;
 }
+
+async function listVerifications(connectionId) {
+  return await client.listVerificationsForConnection({
+    AgencyServiceClientListVerificationsForConnectionOptionalParams: {
+      connectionId: connectionId,
+    },
+  });
+}
 module.exports = {
+  delVerification,
   getPolicy,
   getPolicyList,
   offerVerification,
   getVerification,
+  listVerifications,
   check,
 };
