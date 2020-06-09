@@ -16,11 +16,11 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
-const CONN_ID = 'cb79ecf0-9f84-459a-b608-073a7ed90bac';
+const CONN_ID = '';
+const PERS_CRED_ID = 'N4dqaFJG3qu2P5A7xKEKrB:3:CL:107380:default'; // Personal Credential Definition
+const POLICY_ID = '4543223c-8710-4731-a27b-08d807eddf00'; // From Safe Place Verification Policy
 
-// const VER_ID = 'cd6c88a2-51ba-4fae-afc0-93f7cd248722'; // Positive Test Result Verification
 const VER_ID = 'e7e5ce0d-c50f-4e2e-a785-0a597b4a42fb'; // Negative Test Result Verification
-const POLICY_ID = '5d401288-4d61-4190-261a-08d7de69f4ca'; // Positive Test Result Policy
 const VER_DEF_ID = '4a9b8374-86da-409d-2619-08d7de69f4ca'; // Positive Test Result Definition
 const MSG_ID = '846390b7-72b3-4454-9110-c0eeaa022623';
 const STATE = 'Offered';
@@ -32,6 +32,8 @@ let policyId = '';
 let verificationId = '';
 let definitionId = '';
 let state = '';
+let ct = 0;
+let allDetails = false;
 
 function listError(e) {
   console.log(e.message);
@@ -39,10 +41,32 @@ function listError(e) {
 }
 
 module.exports = async function (context, req) {
+  //
+  // STEP 3: return results from streetcred API to client
+  //
+  function respond(response) {
+    if (response) {
+      context.log('response:');
+      context.log(response);
+    }
+    context.res = {
+      status: 200,
+      body: { response: response },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+  }
+
   if (req.body) {
     if (req.body.credential) {
+      data = await credentials.createConnectionlessCredential(
+        req.body.credential
+      );
+      respond(data);
     }
   }
+
   if (req.query.name) {
     const listOrganizations = async () => {
       var result = await client.listTenants().catch((e) => console.log(e));
@@ -98,6 +122,7 @@ module.exports = async function (context, req) {
     // STEP 1: get arguments ready for specific API calls
     //
     let functionName = req.query.name;
+    console.log(`preparing to call execute('${functionName}')`);
     switch (functionName) {
       // Connections Section
       case 'connGet':
@@ -115,6 +140,10 @@ module.exports = async function (context, req) {
 
       // Credential Section
       case 'credDel':
+        credentialId = req.query.credentialId;
+        respond(await execute(functionName));
+        break;
+      case 'credDelAllOffers':
         credentialId = req.query.credentialId;
         respond(await execute(functionName));
         break;
@@ -139,11 +168,17 @@ module.exports = async function (context, req) {
       case 'proofOffer':
         connectionId = req.query.connectionId
           ? req.query.connectionId
-          : CONN_ID;
+          : CONN_ID
+          ? CONN_ID
+          : '';
         policyId = req.query.policyId ? req.query.policyId : POLICY_ID;
 
         console.log('executing ', functionName);
         // forget to await execute() and you won't see any reponse
+        respond(await execute(functionName));
+        break;
+      case 'proofOfferNoConn':
+        policyId = req.query.policyId ? req.query.policyId : POLICY_ID;
         respond(await execute(functionName));
         break;
 
@@ -171,6 +206,8 @@ module.exports = async function (context, req) {
         verificationId = req.query.verificationId
           ? req.query.verificationId
           : VER_ID;
+        allDetails = req.query.allDetails; //? req.query.allDetails : allDetails;
+
         console.log('verificationId:', verificationId);
         respond(await execute(functionName));
         break;
@@ -179,31 +216,9 @@ module.exports = async function (context, req) {
           ? req.query.connectionId
           : CONN_ID;
         respond(await execute(functionName));
-
         break;
 
-      case 'conn':
-        context.log('Enter getConnection()...');
-        connectionId = req.query.connectionId
-          ? req.query.connectionId
-          : CONN_ID;
-        if (connectionId) {
-          respond(await execute(client.getConnection(connectionId)));
-        } else {
-          respond(
-            'You need to pass a connectionId string to call client.getConnection()'
-          );
-        }
-        context.log('Leaving getConnection()...');
-        break;
-
-      case 'v4conn':
-        context.log('Enter listVerificationsForConnection()...');
-        //*Payload:
-        // The optional connection identifier:
-        // connectionId?: string;
-        // The definition identifier:
-        // definitionId?: string;
+      case 'ver4conn':
         connectionId = req.query.connectionId
           ? req.query.connectionId
           : CONN_ID
@@ -214,17 +229,7 @@ module.exports = async function (context, req) {
           : VER_DEF_ID
           ? VER_DEF_ID
           : '';
-        console.log('connectionId:', connectionId);
-        console.log('definitionId:', definitionId);
-        respond(
-          await execute(
-            client.listVerificationsForConnection({
-              connectionId: connectionId,
-              definitionId: definitionId,
-            })
-          )
-        );
-        context.log('Leave listVerificationsForConnection()...');
+        respond(await execute(functionName));
         break;
 
       case 'invite':
@@ -238,6 +243,8 @@ module.exports = async function (context, req) {
         });
 
         break;
+      default:
+        console.log('Cannot handle ', functionName);
     }
 
     //
@@ -245,6 +252,7 @@ module.exports = async function (context, req) {
     //
     async function execute(functionName) {
       let data;
+      console.log(`entering execute('${functionName}')`);
       try {
         switch (functionName) {
           case 'connAdd':
@@ -265,6 +273,23 @@ module.exports = async function (context, req) {
 
           case 'credDel':
             data = await credentials.deleteCredential(credentialId);
+            break;
+          case 'credDelAllOffers':
+            connectionId = '';
+            state = 'offered';
+            definitionId = '';
+            data = await credentials.listCredentials(
+              connectionId,
+              state,
+              definitionId
+            );
+            ct = data.length;
+
+            data.forEach(async function (credential) {
+              await credentials.deleteCredential(credential.credentialId);
+            });
+            data = `Deleted all ${ct} offered credentials `;
+            await credentials.purge(definitionId);
             break;
           case 'credList':
             data = await credentials.listCredentials(
@@ -299,24 +324,37 @@ module.exports = async function (context, req) {
               policyId
             );
             break;
+          case 'proofOfferNoConn':
+            data = await verifications.offerConnectionlessVerification(
+              policyId
+            );
+            break;
           case 'ver':
-            let allDetails = 0;
             data = await verifications.getVerification(
               verificationId,
               allDetails
             );
             break;
+          case 'ver4conn':
+            data = await verifications.listVerifications(
+              connectionId,
+              definitionId
+            );
+            break;
           case 'verDelAll':
             data = await verifications.listVerifications(connectionId);
-            let ct = data.length;
+            ct = data.length;
             data.forEach(async function (verification) {
               await verifications.delVerification(verification.verificationId);
             });
             data = `Deleted all ${ct} verifications for ${connectionId}`;
             break;
+
+          default:
+            console.log('Cannot handle ', functionName);
         }
         console.log('execute() returns:');
-        console.log(data);
+        context.log.info(data);
         //return results to Step 1 so it can pass them on to Step 3
         return data;
       } catch (e) {
@@ -328,23 +366,6 @@ module.exports = async function (context, req) {
           return e;
         }
       }
-    }
-
-    //
-    // STEP 3: return results from streetcred API to client
-    //
-    function respond(response) {
-      if (response) {
-        context.log('response:');
-        context.log(response[0]);
-      }
-      context.res = {
-        status: 200,
-        body: { response: response },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
     }
   }
 };

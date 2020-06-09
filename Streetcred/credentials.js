@@ -25,15 +25,30 @@ const createCredential = async function () {
   return result;
 };
 
-const deleteCredential = async function (connectionId) {
-  console.log(`Enter deleteCredential('${connectionId}')...`);
+const createConnectionlessCredential = async function (
+  credentialOfferParameters
+) {
+  console.log(`Enter createCredential('${credentialOfferParameters}')...`);
+  let result = await client.createCredential({
+    // ...but if you give values to the object, you raise{"error":"A storage error occurred during the wallet operation.","errorType":"WalletStorageException"}
+    credentialOfferParameters,
+  });
+  console.log(
+    `...Leave createCredential('${credentialOfferParameters}') with result:`
+  );
+  console.log(result);
+  return result;
+};
+
+const deleteCredential = async function (credentialId) {
+  console.log(`Enter deleteCredential('${credentialId}')...`);
   ASSERT.ok(
-    connectionId,
+    credentialId,
     'You need to pass a connectionId string to deleteCredential()'
   );
-  await client.deleteCredential(connectionId);
+  await client.revokeCredential(credentialId);
   console.log(
-    `...Leave deleteCredential('${connectionId}') does not return a result:`
+    `...Leave deleteCredential('${credentialId}') does not return a result:`
   );
 };
 
@@ -46,7 +61,6 @@ const getCredential = async function (connectionId) {
   try {
     let result = await client.getCredential(connectionId);
     console.log(`...Leave getCredential('${connectionId}') with result:`);
-    return result;
   } catch (error) {
     return { message: `${connectionId} not found or previously deleted` };
   }
@@ -58,14 +72,19 @@ const listCredentials = async function (connectionId, state, definitionId) {
   );
   let result = await client.listCredentials();
   console.log(`...Leave getMessage() with result:`);
-  console.log(result);
   return result;
+};
+
+const purge = async (definitionId) => {
+  await client.purgeCredentials(definitionId);
 };
 
 module.exports = {
   createCredential,
+  createConnectionlessCredential,
   deleteCredential,
   getCredential,
   listCredentials,
+  purge,
   check,
 };

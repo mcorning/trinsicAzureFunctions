@@ -45,13 +45,31 @@ async function offerVerification(connectionId, policyId) {
     'You need to pass a separate policyId string to sendVerificationFromPolicy()'
   );
 
-  console.log(`Enter offerVerification('${connectionId}, ${policyId}')...`);
+  console.log(`Enter offerVerification('${connectionId}', '${policyId}')...`);
   // if you get the parameter order wrong, you will see this error:
   // ERROR { Error: {"error":"Object reference not set to an instance of an object.","errorType":"NullReferenceException"}
   let result = await client.sendVerificationFromPolicy(connectionId, policyId);
 
   console.log(
-    `Leave offerVerification('${connectionId}, ${policyId}') with result:`
+    `Leave offerVerification('${connectionId}', ' ${policyId}') with result:`
+  );
+  console.log(result);
+  return result;
+}
+
+async function offerConnectionlessVerification(policyId) {
+  ASSERT.ok(
+    policyId,
+    'You need to pass a separate policyId string to sendVerificationFromPolicy()'
+  );
+
+  console.log(`Enter offerConnectionlessVerification('${policyId}')...`);
+  // if you get the parameter order wrong, you will see this error:
+  // ERROR { Error: {"error":"Object reference not set to an instance of an object.","errorType":"NullReferenceException"}
+  let result = await client.createVerificationFromPolicy(policyId);
+
+  console.log(
+    `Leave offerConnectionlessVerification( ' ${policyId}') with result:`
   );
   console.log(result);
   return result;
@@ -74,7 +92,7 @@ async function delVerification(verificationId) {
   return results;
 }
 
-async function getVerification(verificationId, allDetails) {
+async function getVerification(verificationId, allDetails = false) {
   ASSERT.ok(
     verificationId,
     'You need to pass a separate verificationId string to getVerification()'
@@ -92,7 +110,6 @@ async function getVerification(verificationId, allDetails) {
     ? results
     : {
         test: results.policy.name,
-        testDate: results.proof.testDate.value,
         isValid: results.isValid,
       };
 
@@ -102,10 +119,11 @@ async function getVerification(verificationId, allDetails) {
   return result;
 }
 
-async function listVerifications(connectionId) {
+async function listVerifications(connectionId, definitionId) {
   return await client.listVerificationsForConnection({
     AgencyServiceClientListVerificationsForConnectionOptionalParams: {
       connectionId: connectionId,
+      definitionId: definitionId,
     },
   });
 }
@@ -113,6 +131,7 @@ module.exports = {
   delVerification,
   getPolicy,
   getPolicyList,
+  offerConnectionlessVerification,
   offerVerification,
   getVerification,
   listVerifications,
