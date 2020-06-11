@@ -139,6 +139,9 @@ module.exports = async function (context, req) {
         break;
 
       // Credential Section
+      case 'credDefList':
+        respond(await execute(functionName));
+        break;
       case 'credDel':
         credentialId = req.query.credentialId;
         respond(await execute(functionName));
@@ -271,6 +274,9 @@ module.exports = async function (context, req) {
             data = await connections.listConnections();
             break;
 
+          case 'credDefList':
+            data = await credentials.listCredentialDefinitions();
+            break;
           case 'credDel':
             data = await credentials.deleteCredential(credentialId);
             break;

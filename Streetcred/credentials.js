@@ -28,15 +28,24 @@ const createCredential = async function () {
 const createConnectionlessCredential = async function (
   credentialOfferParameters
 ) {
-  console.log(`Enter createCredential('${credentialOfferParameters}')...`);
-  let result = await client.createCredential({
-    // ...but if you give values to the object, you raise{"error":"A storage error occurred during the wallet operation.","errorType":"WalletStorageException"}
-    credentialOfferParameters,
-  });
+  let result;
   console.log(
-    `...Leave createCredential('${credentialOfferParameters}') with result:`
+    `Enter createConnectionlessCredential('${credentialOfferParameters}')...`
   );
-  console.log(result);
+  try {
+    // we raised a 500 error NullReferenceException when we the creddef string ended in 'default' (no error when the only thing changed was using "string" instead)
+    result = await client.createCredential({
+      // ...but if you give values to the object, you raise{"error":"A storage error occurred during the wallet operation.","errorType":"WalletStorageException"}
+      credentialOfferParameters,
+    });
+    console.log(
+      `...Leave createConnectionlessCredential('${credentialOfferParameters}') with result:`
+    );
+    console.log(result);
+  } catch (error) {
+    console.log(error);
+    result = error;
+  }
   return result;
 };
 
@@ -71,7 +80,13 @@ const listCredentials = async function (connectionId, state, definitionId) {
     `Enter listCredentials('${connectionId}','${state}','${definitionId}')...`
   );
   let result = await client.listCredentials();
-  console.log(`...Leave getMessage() with result:`);
+  console.log(`...Leave listCredentials() with result:`);
+  return result;
+};
+const listCredentialDefinitions = async function () {
+  console.log(`Enter listCredentialDefinitions()...`);
+  let result = await client.listCredentialDefinitions();
+  console.log(`...Leave listCredentialDefinitions() with result:`);
   return result;
 };
 
@@ -85,6 +100,7 @@ module.exports = {
   deleteCredential,
   getCredential,
   listCredentials,
+  listCredentialDefinitions,
   purge,
   check,
 };
