@@ -1,3 +1,5 @@
+// github token
+// vscode://vscode.github-authentication/did-authenticate?windowId=1&code=beaeab56a0204a7dcd3d&state=019d92c3-db9e-4d6d-a095-b6a401106d11
 // debugging is buggy. do we need this in local.settings.json?     "languageWorkers:node:arguments": "--inspect=5858"
 const ASSERT = require('assert');
 
@@ -10,8 +12,9 @@ const {
   AgencyServiceClient,
   Credentials,
 } = require('@streetcred.id/service-clients');
-const ACCESSTOK = 't2w1B4MJCJjFEWZPcw1Xsmbfca2qAQnzU-cp3_pdgZg';
-const SUBKEY = 'a820c2f69495430cae43c66df163cdd1';
+const config = require('../config.json');
+const ACCESSTOK = config.ACCESSTOK;
+const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
@@ -57,8 +60,14 @@ module.exports = async function (context, req) {
       },
     };
   }
+  context.log.info('starting');
 
   if (req.body) {
+    console.log(req.body);
+    if (req.body.connection) {
+      data = await connections.createConnection(req.body.connection);
+      respond(data);
+    }
     if (req.body.credential) {
       data = await credentials.createConnectionlessCredential(
         req.body.credential
@@ -139,10 +148,16 @@ module.exports = async function (context, req) {
         break;
 
       // Credential Section
+      case 'credGet':
+        credentialId = req.query.credentialId;
+        respond(await execute(functionName));
+        break;
       case 'credDefList':
         respond(await execute(functionName));
         break;
       case 'credDel':
+        credentialId = req.query.credentialId;
+        respond(await execute(functionName));
         credentialId = req.query.credentialId;
         respond(await execute(functionName));
         break;
@@ -280,6 +295,7 @@ module.exports = async function (context, req) {
           case 'credDel':
             data = await credentials.deleteCredential(credentialId);
             break;
+
           case 'credDelAllOffers':
             connectionId = '';
             state = 'offered';
@@ -304,7 +320,9 @@ module.exports = async function (context, req) {
               definitionId
             );
             break;
-
+          case 'credGet':
+            data = await credentials.getCredential(credentialId);
+            break;
           case 'msg':
             data = await messages.getMessage(messageId);
             break;

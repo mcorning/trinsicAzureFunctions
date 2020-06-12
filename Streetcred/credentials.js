@@ -4,8 +4,9 @@ const {
   AgencyServiceClient,
   Credentials,
 } = require('@streetcred.id/service-clients');
-const ACCESSTOK = 't2w1B4MJCJjFEWZPcw1Xsmbfca2qAQnzU-cp3_pdgZg';
-const SUBKEY = 'a820c2f69495430cae43c66df163cdd1';
+const config = require('../config.json');
+const ACCESSTOK = config.ACCESSTOK;
+const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
@@ -20,8 +21,7 @@ const createCredential = async function () {
     // ...but if you give values to the object, you raise{"error":"A storage error occurred during the wallet operation.","errorType":"WalletStorageException"}
     connectionInvitationParameters: {},
   });
-  console.log(`...Leave createCredential() with result:`);
-  console.log(result);
+  console.log(`...Leave createCredential()`);
   return result;
 };
 
@@ -39,9 +39,8 @@ const createConnectionlessCredential = async function (
       credentialOfferParameters,
     });
     console.log(
-      `...Leave createConnectionlessCredential('${credentialOfferParameters}') with result:`
+      `...Leave createConnectionlessCredential('${credentialOfferParameters}') `
     );
-    console.log(result);
   } catch (error) {
     console.log(error);
     result = error;
@@ -61,17 +60,18 @@ const deleteCredential = async function (credentialId) {
   );
 };
 
-const getCredential = async function (connectionId) {
-  console.log(`Enter getCredential('${connectionId}')...`);
+const getCredential = async function (credentialId) {
+  console.log(`Enter getCredential('${credentialId}')...`);
   ASSERT.ok(
-    connectionId,
-    'You need to pass a connectionId string to getCredential()'
+    credentialId,
+    'You need to pass a credentialId string to getCredential()'
   );
   try {
-    let result = await client.getCredential(connectionId);
-    console.log(`...Leave getCredential('${connectionId}') with result:`);
+    let result = await client.getCredential(credentialId);
+    console.log(`...Leave getCredential('${credentialId}') `);
+    return result;
   } catch (error) {
-    return { message: `${connectionId} not found or previously deleted` };
+    return { message: `${credentialId} not found or previously deleted` };
   }
 };
 
@@ -80,13 +80,16 @@ const listCredentials = async function (connectionId, state, definitionId) {
     `Enter listCredentials('${connectionId}','${state}','${definitionId}')...`
   );
   let result = await client.listCredentials();
-  console.log(`...Leave listCredentials() with result:`);
+  console.log(
+    `...Leave listCredentials('${connectionId}','${state}','${definitionId}') `
+  );
   return result;
 };
+
 const listCredentialDefinitions = async function () {
   console.log(`Enter listCredentialDefinitions()...`);
   let result = await client.listCredentialDefinitions();
-  console.log(`...Leave listCredentialDefinitions() with result:`);
+  console.log(`...Leave listCredentialDefinitions()`);
   return result;
 };
 

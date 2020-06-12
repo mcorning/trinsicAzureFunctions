@@ -4,8 +4,9 @@ const {
   AgencyServiceClient,
   Credentials,
 } = require('@streetcred.id/service-clients');
-const ACCESSTOK = 't2w1B4MJCJjFEWZPcw1Xsmbfca2qAQnzU-cp3_pdgZg';
-const SUBKEY = 'a820c2f69495430cae43c66df163cdd1';
+const config = require('../config.json');
+const ACCESSTOK = config.ACCESSTOK;
+const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });

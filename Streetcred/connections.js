@@ -4,8 +4,9 @@ const {
   AgencyServiceClient,
   Credentials,
 } = require('@streetcred.id/service-clients');
-const ACCESSTOK = 't2w1B4MJCJjFEWZPcw1Xsmbfca2qAQnzU-cp3_pdgZg';
-const SUBKEY = 'a820c2f69495430cae43c66df163cdd1';
+const config = require('../config.json');
+const ACCESSTOK = config.ACCESSTOK;
+const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
@@ -14,7 +15,7 @@ function check() {
   console.log('works');
 }
 
-const createConnection = async function () {
+const createConnection = async function (payload) {
   console.log(`Enter createConnection()...`);
   // signature:     createConnection(options?: Models.AgencyServiceClientCreateConnectionOptionalParams): Promise<Models.CreateConnectionResponse>;
   // drill into the options interface to see:
@@ -49,10 +50,12 @@ const createConnection = async function () {
   // so, use connectionInvitationParameters as the names parameter...
   let result = await client.createConnection({
     // ...but if you give values to the object, you raise{"error":"A storage error occurred during the wallet operation.","errorType":"WalletStorageException"}
-    connectionInvitationParameters: {},
+    connectionInvitationParameters: {
+      multiParty: payload.multiParty,
+      name: payload.name,
+    },
   });
   console.log(`...Leave createConnection() with result:`);
-  console.log(result);
   return result;
 };
 
@@ -89,7 +92,7 @@ const getConnection = async function (connectionId) {
   );
   try {
     let result = await client.getConnection(connectionId);
-    console.log(`...Leave getConnection('${connectionId}') with result:`);
+    console.log(`...Leave getConnection('${connectionId}') `);
     return result;
   } catch (error) {
     return { message: `${connectionId} not found or previously deleted` };
@@ -99,8 +102,7 @@ const getConnection = async function (connectionId) {
 const listConnections = async function () {
   console.log(`Enter listConnections()...`);
   let result = await client.listConnections();
-  console.log(`...Leave getMessage() with result:`);
-  console.log(result);
+  console.log(`...Leave getMessage() `);
   return result;
 };
 
