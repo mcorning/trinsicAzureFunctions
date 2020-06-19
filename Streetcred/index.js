@@ -1,5 +1,3 @@
-// github token
-// vscode://vscode.github-authentication/did-authenticate?windowId=1&code=beaeab56a0204a7dcd3d&state=019d92c3-db9e-4d6d-a095-b6a401106d11
 // debugging is buggy. do we need this in local.settings.json?     "languageWorkers:node:arguments": "--inspect=5858"
 const ASSERT = require('assert');
 
@@ -63,7 +61,7 @@ module.exports = async function (context, req) {
   context.log.info('starting');
 
   if (req.body) {
-    console.log(req.body);
+    console.log('req:', req);
     if (req.body.connection) {
       data = await connections.createConnection(req.body.connection);
       respond(data);
