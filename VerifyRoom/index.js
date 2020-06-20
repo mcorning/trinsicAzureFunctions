@@ -12,29 +12,18 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
-const SAFE_ZIPS = ['97759'];
-const THRESHOLD = 5;
+const THRESHOLD = 4;
 
 module.exports = async function (context, req) {
-  context.log('Verifying Visitor');
+  context.log('Verifying Room');
 
   let payload = {
-    name: 'Visitor risk',
+    name: 'Room risk',
     version: '1.0',
     attributes: [
       {
-        policyName: 'Personal',
-        attributeNames: ['age', 'zipcode', 'symptomsScore'],
-        restrictions: null,
-      },
-      {
-        policyName: 'Negative Test Results',
-        attributeNames: ['negativeResult', 'testDate'],
-        restrictions: null,
-      },
-      {
-        policyName: 'Positive Test Results',
-        attributeNames: ['positiveResult', 'testDate'],
+        policyName: 'Threshold',
+        attributeNames: ['riskThreshold'],
         restrictions: null,
       },
     ],
