@@ -47,11 +47,19 @@ module.exports = async function (context, req) {
 
   if (response) {
     context.log('response:');
-    context.log(response.verificationId, response.verificationRequestUrl);
+    context.log(
+      response.verificationId,
+      response.verificationRequestUrl,
+      response.verificationRequestData
+    );
   }
   context.res = {
     status: 200,
-    body: { url: response.verificationRequestUrl, id: response.verificationId },
+    body: {
+      url: response.verificationRequestUrl,
+      id: response.verificationId,
+      data: response.verificationRequestData,
+    },
     headers: {
       'Content-Type': 'application/json',
     },
