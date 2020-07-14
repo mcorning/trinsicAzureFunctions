@@ -12,12 +12,8 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
-const SAFE_ZIPS = ['97759'];
-const THRESHOLD = 5;
-let proof = {};
-
 module.exports = async function (context) {
-  context.log('Making connection');
+  context.log('Listing connections');
 
   function respond(status, msg) {
     context.res = {
@@ -29,16 +25,11 @@ module.exports = async function (context) {
     };
   }
 
-  async function makeConnections() {
-    console.log('creating connection');
-    let result = await client.createConnection({
-      connectionInvitationParameters: {
-        multiParty: false,
-        name: 'somebody you care about',
-      },
-    });
-    return { connectionId: result.connectionId, url: result.invitationUrl };
+  async function listConnections() {
+    console.log('Listing connections');
+    let result = await client.listConnections();
+    return { count: result.length, connections: result };
   }
 
-  respond(200, await makeConnections());
+  respond(200, await listConnections());
 };

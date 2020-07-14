@@ -13,6 +13,7 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
 });
 
 module.exports = async function (context, req) {
+  context.log('ACCESS_TOKEN:', ACCESSTOK);
   context.log('Sending message with parameters:');
   context.log(req.body);
 
@@ -28,8 +29,10 @@ module.exports = async function (context, req) {
 
   respond(
     200,
-    await client.sendMessage({
-      basicMessageParameters: req.body,
-    })
+    await client
+      .sendMessage({
+        basicMessageParameters: req.body,
+      })
+      .catch((e) => console.error('Error in sendMessge()', e))
   );
 };
