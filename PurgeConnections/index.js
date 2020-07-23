@@ -6,11 +6,14 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOKEN_SOTERIA = config.ACCESSTOK;
+const ACCESSTOKEN_SOTERIA = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
-const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
-  noRetryPolicy: true,
-});
+const client = new AgencyServiceClient(
+  new Credentials(ACCESSTOKEN_SOTERIA, SUBKEY),
+  {
+    noRetryPolicy: true,
+  }
+);
 
 module.exports = async function (context) {
   context.log('Purging connections');

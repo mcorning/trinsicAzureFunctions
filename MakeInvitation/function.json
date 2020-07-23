@@ -9,7 +9,7 @@
         "get",
         "post"
       ],
-      "route": "connections/room"
+      "route": "invitations"
     },
     {
       "type": "http",

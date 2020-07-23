@@ -6,7 +6,7 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOK;
+const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
@@ -18,7 +18,8 @@ let proof = {};
 
 module.exports = async function (context) {
   context.log('Making connection');
-
+  let name = context.req.query ? context.req.query.name : null;
+  console.log('query', context.req.query);
   function respond(status, msg) {
     context.res = {
       status: status,
@@ -30,11 +31,11 @@ module.exports = async function (context) {
   }
 
   async function makeConnections() {
-    console.log('creating connection');
+    console.log('creating connection for', name);
     let result = await client.createConnection({
       connectionInvitationParameters: {
         multiParty: false,
-        name: 'somebody you care about',
+        name: name,
       },
     });
     return { connectionId: result.connectionId, url: result.invitationUrl };

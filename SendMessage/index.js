@@ -6,7 +6,7 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOK;
+const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,

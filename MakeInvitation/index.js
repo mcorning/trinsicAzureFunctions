@@ -6,20 +6,16 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOKEN_SOTERIA;
+const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
-const SAFE_ZIPS = ['97759'];
-const THRESHOLD = 5;
-let proof = {};
-
 module.exports = async function (context) {
-  const roomConnectionId = context.req.query.id;
+  const connectionId = context.req.query.id;
 
-  context.log('Making connection');
+  context.log('Making invitation');
 
   function respond(status, msg) {
     context.res = {
@@ -31,17 +27,17 @@ module.exports = async function (context) {
     };
   }
 
-  async function makeConnections() {
-    console.log('creating connection to', roomConnectionId);
+  async function makeInvitation() {
+    console.log('Creating invitation for', connectionId);
     let result = await client.createConnection({
       connectionInvitationParameters: {
-        connectionId: roomConnectionId,
+        connectionId: connectionId,
         multiParty: true,
-        name: roomConnectionId,
+        name: connectionId,
       },
     });
     return { connectionId: result.connectionId, url: result.invitationUrl };
   }
 
-  respond(200, await makeConnections());
+  respond(200, await makeInvitation());
 };

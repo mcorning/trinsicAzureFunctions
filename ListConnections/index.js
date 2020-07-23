@@ -6,7 +6,7 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOK;
+const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
 const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
@@ -14,6 +14,8 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
 
 module.exports = async function (context) {
   context.log('Listing connections');
+  console.log('query', context.req.query);
+  let state = context.req.query.state;
 
   function respond(status, msg) {
     context.res = {
@@ -27,7 +29,7 @@ module.exports = async function (context) {
 
   async function listConnections() {
     console.log('Listing connections');
-    let result = await client.listConnections();
+    let result = await client.listConnections({ state: state });
     return { count: result.length, connections: result };
   }
 
