@@ -38,7 +38,11 @@ module.exports = async function (context) {
         name: name,
       },
     });
-    return { connectionId: result.connectionId, url: result.invitationUrl };
+    return {
+      connectionId: result.connectionId,
+      url: result.invitationUrl,
+      invite: result.invitation,
+    };
   }
 
   respond(200, await makeConnections());
