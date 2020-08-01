@@ -16,6 +16,7 @@ const SAFE_ZIPS = ['97759'];
 const THRESHOLD = 5;
 let proof = {};
 
+//      "route": "connections"
 module.exports = async function (context) {
   context.log('Making connection');
   let name = context.req.query ? context.req.query.name : null;

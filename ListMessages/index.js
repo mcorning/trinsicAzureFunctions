@@ -12,6 +12,7 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
+// "route": "messages/connection"
 module.exports = async function (context, req) {
   context.log('Listing messages for:');
   context.log(req.query.connectionId);

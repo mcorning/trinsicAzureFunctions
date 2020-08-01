@@ -12,6 +12,7 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
+//      "route": "connections/list"
 module.exports = async function (context) {
   context.log('Listing connections');
   console.log('query', context.req.query);

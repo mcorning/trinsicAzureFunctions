@@ -12,6 +12,7 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
   noRetryPolicy: true,
 });
 
+// "route": "invitations"
 module.exports = async function (context) {
   const connectionId = context.req.query.id;
 
