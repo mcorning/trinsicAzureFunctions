@@ -13,7 +13,7 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
 });
 
 // "route": "messages"
-module.exports = async function (context, req) {
+module.exports = async function SendMessage(context, req) {
   context.log('ACCESS_TOKEN:', ACCESSTOK);
   context.log('Sending message with parameters:');
   context.log(req.body);
