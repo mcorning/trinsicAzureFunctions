@@ -11,8 +11,8 @@ const SUBKEY = config.SUBKEY;
 
 //      "route": "connections/list/visitors"
 module.exports = async function (context) {
-  let field = context.req.query.field;
-  const ACCESSTOK = config[field];
+  const FIELD = req.query.field;
+  const ACCESSTOK = config[FIELD];
   const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
     noRetryPolicy: true,
   });

@@ -6,17 +6,43 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
 const SUBKEY = config.SUBKEY;
-const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
-  noRetryPolicy: true,
-});
 
 // "route": "messages"
 module.exports = async function SendMessage(context, req) {
-  context.log('ACCESS_TOKEN:', ACCESSTOK);
-  context.log('Sending message with parameters:');
-  context.log(req.body);
+  const field = req.body.field;
+
+  context.log.warn('Organization:', field);
+  const ACCESSTOK = config[field];
+  context.log.warn('Organization:', ACCESSTOK);
+
+  const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
+    noRetryPolicy: true,
+  });
+
+  let msg
+  let a = field ? 0 : 1
+  let b = ACCESSTOK ? 0 : 2
+  let x = a + b
+  console.log('bit mask', x);
+  if (x) {
+    switch (x) {
+      case 2:
+        msg = `To get to your Trinsic Organiztion, provide a valid field property in req.body (${field} is invalid).`
+        break;
+
+      default:
+        msg = `To get to your Trinsic Organiztion, provide a valid field property in req.body.`
+
+    }
+    //= (field && !ACCESSTOK) ? `And ensure ACCESSTOK based on field, ${field}, is correct.` :      (`Missing arg(s) ${!field ? 'field' : !connectionId ? 'connectionId'}. `)
+    respond(400, msg);
+  } else {
+    respond(200, await client
+      .sendMessage({
+        basicMessageParameters: req.body,
+      })());
+  }
 
   function respond(status, msg) {
     context.res = {
@@ -28,12 +54,5 @@ module.exports = async function SendMessage(context, req) {
     };
   }
 
-  respond(
-    200,
-    await client
-      .sendMessage({
-        basicMessageParameters: req.body,
-      })
-      .catch((e) => console.error('Error in sendMessge()', e))
-  );
+
 };

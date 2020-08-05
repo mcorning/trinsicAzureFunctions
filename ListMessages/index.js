@@ -6,16 +6,55 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const ACCESSTOK = config.ACCESSTOK_SOTERIA_LAB;
+const { createLogicalAnd } = require('typescript');
 const SUBKEY = config.SUBKEY;
-const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
-  noRetryPolicy: true,
-});
 
 // "route": "messages/connection"
 module.exports = async function (context, req) {
-  context.log('Listing messages for:');
-  context.log(req.query.connectionId);
+  const { field, connectionId } = req.query
+  context.log.warn('Organization:', field);
+  const ACCESSTOK = config[field];
+  context.log.warn('Organization:', ACCESSTOK);
+
+  const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
+    noRetryPolicy: true,
+  });
+
+
+  let f = field ? 0 : 1
+  let c = connectionId ? 0 : 2
+  let a = ACCESSTOK ? 0 : 4
+  let x = f + c + a
+  console.log('bit mask', x);
+  if (x) {
+    let msg
+    switch (x) {
+      case 6:
+        msg = `Provide a valid field argument (${field} is invalid) to get to your Trinsic Organiztion. And provide a connectionId, as well.`
+        break;
+      case 7:
+      case 3:
+        msg = `Provide a valid field argument to get to your Trinsic Organiztion. And provide a connectionId, as well.`
+        break;
+      case 4:
+        msg = `Provide a valid field argument (${field} is invalid) to get to your Trinsic Organiztion.`
+        break;
+      case 5:
+      case 1:
+        msg = `Provide a valid field argument to get to your Trinsic Organiztion.`
+        break;
+      case 2:
+        msg = "Provide a connectionId."
+        break;
+      default:
+        msg = "unknown case of failure"
+
+    }
+    respond(400, msg);
+  } else {
+    respond(200, await client.listMessages(connectionId));
+  }
+
 
   function respond(status, msg) {
     context.res = {
@@ -27,7 +66,5 @@ module.exports = async function (context, req) {
     };
   }
 
-  let results = await client.listMessages(req.query.connectionId);
-  console.log('results:', results);
-  respond(200, results);
+
 };
