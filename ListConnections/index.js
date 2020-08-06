@@ -10,7 +10,7 @@ const SUBKEY = config.SUBKEY;
 
 //      "route": "connections/list"
 module.exports = async function (context, req) {
-  const { field, state } = req.query
+  const { field, state, multiParty } = req.query
   context.log.warn('Organization:', field);
   const ACCESSTOK = config[field];
   context.log.warn('Organization:', ACCESSTOK);
@@ -42,7 +42,10 @@ module.exports = async function (context, req) {
 
   async function listConnections() {
     console.log('Listing connections');
-    let result = await client.listConnections({ state: state });
+    let result = await client.listConnections({ state: multiParty ? "Invited" : state });
+    if (multiParty) {
+      result = result.filter(v => v.multiParty == true)
+    }
     return { count: result.length, connections: result };
   }
 

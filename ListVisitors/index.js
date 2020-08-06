@@ -10,26 +10,32 @@ const config = require('../config.json');
 const SUBKEY = config.SUBKEY;
 
 //      "route": "connections/list/visitors"
-module.exports = async function (context) {
-  const FIELD = req.query.field;
-  const ACCESSTOK = config[FIELD];
+module.exports = async function (context, req) {
+  const { field, phones } = req.body;
+  const ACCESSTOK = config[field];
   const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
     noRetryPolicy: true,
   });
 
-  context.log('Listing Visitors');
+  respond(200, await listConnections());
 
-  function respond(status, msg) {
-    context.res = {
-      status: status,
-      body: msg,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
+  async function listConnections() {
+    let result = await client.listConnections({ state: 'Invited' });
+    let visitors = new Map()
+    let allVisitors =
+      result.filter(v => phones.includes(nameFrom(v.invitation)))
+        .map(v => {
+          let name = nameFrom(v.invitation)
+          let o = {}
+          o['connectionId'] = v.connectionId
+          o['date'] = v.createdAtUtc
+          if (!visitors.has(name)) visitors.set(name, o)
+        })
+
+    return { count: visitors.size, visitors: Array.from(visitors) };
   }
 
-  function decode(base64) {
+  function nameFrom(base64) {
     let decoded = '';
     let x = base64.length % 4;
     let name = null;
@@ -55,15 +61,17 @@ module.exports = async function (context) {
     }
     return name;
   }
-
-  async function listConnections() {
-    console.log('Listing visitors');
-    let result = await client.listConnections({ state: 'Invited' });
-    let visitors = result.filter((v) => v.multiParty == false);
-
-    let names = visitors.map((v) => decode(v.invitation));
-    return { count: visitors.length, visitors: names };
+  function respond(status, msg) {
+    context.res = {
+      status: status,
+      body: msg,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
   }
 
-  respond(200, await listConnections());
+
+
+
 };
