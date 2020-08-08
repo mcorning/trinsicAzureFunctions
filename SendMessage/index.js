@@ -13,20 +13,10 @@ const client = new AgencyServiceClient(new Credentials(ACCESSTOK, SUBKEY), {
 });
 
 // "route": "messages"
-module.exports = async function SendMessage(context, req) {
+module.exports = async function (context, req) {
   context.log('ACCESS_TOKEN:', ACCESSTOK);
   context.log('Sending message with parameters:');
-  context.log.warn(req.body);
-
-  try {
-    await client.sendMessage({
-      basicMessageParameters: { connectionId: 'Home', text: 'local test' },
-    });
-    // context.log.warn('x', x);
-  } catch (error) {
-    context.log.error(error);
-    respond(error.statusCode, error.message);
-  }
+  context.log(req.body);
 
   function respond(status, msg) {
     context.res = {
@@ -37,4 +27,13 @@ module.exports = async function SendMessage(context, req) {
       },
     };
   }
+
+  respond(
+    200,
+    await client
+      .sendMessage({
+        basicMessageParameters: req.body,
+      })
+      .catch((e) => console.error('Error in sendMessge()', e))
+  );
 };
