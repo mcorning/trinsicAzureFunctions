@@ -10,7 +10,7 @@ const SUBKEY = config.SUBKEY;
 
 //      "route": "connections/list"
 module.exports = async function (context, req) {
-  const { field, state, multiParty } = req.query
+  const { field, state, multiParty } = req.query;
   context.log.warn('Organization:', field);
   const ACCESSTOK = config[field];
   context.log.warn('Organization:', ACCESSTOK);
@@ -19,21 +19,23 @@ module.exports = async function (context, req) {
     noRetryPolicy: true,
   });
 
-  let msg
-  let a = field ? 0 : 1
-  let b = ACCESSTOK ? 0 : 2
-  let x = a + b
-  console.log('bit mask', x);
+  let msg;
+  let a = field ? 0 : 1;
+  let b = ACCESSTOK ? 0 : 2;
+  let x = a + b;
   if (x) {
+    context.log.error('bit mask', x);
+
     switch (x) {
       case 2:
-        msg = `Provide a valid field argument (${field} is invalid) to get to your Trinsic Organiztion.`
+        msg = `Provide a valid field argument (${field} is invalid) to get to your Trinsic Organiztion.`;
         break;
 
       default:
-        msg = `Provide a valid field argument to get to your Trinsic Organiztion.`
-
+        msg = `Provide a valid field argument to get to your Trinsic Organiztion.`;
     }
+    context.log.error('error msg:', msg);
+
     //= (field && !ACCESSTOK) ? `And ensure ACCESSTOK based on field, ${field}, is correct.` :      (`Missing arg(s) ${!field ? 'field' : !connectionId ? 'connectionId'}. `)
     respond(400, msg);
   } else {
@@ -42,9 +44,11 @@ module.exports = async function (context, req) {
 
   async function listConnections() {
     console.log('Listing connections');
-    let result = await client.listConnections({ state: multiParty ? "Invited" : state });
+    let result = await client.listConnections({
+      state: multiParty ? 'Invited' : state,
+    });
     if (multiParty) {
-      result = result.filter(v => v.multiParty == true)
+      result = result.filter((v) => v.multiParty == true);
     }
     return { count: result.length, connections: result };
   }
@@ -58,8 +62,4 @@ module.exports = async function (context, req) {
       },
     };
   }
-
-
-
-
 };

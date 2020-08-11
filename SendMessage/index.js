@@ -28,12 +28,15 @@ module.exports = async function (context, req) {
     };
   }
 
-  respond(
-    200,
-    await client
-      .sendMessage({
-        basicMessageParameters: req.body,
-      })
-      .catch((e) => console.error('Error in sendMessge()', e))
-  );
+  try {
+    let x = await client.sendMessage({
+      basicMessageParameters: req.body,
+    });
+    context.log.info('Successfully sent message');
+    respond(200, x);
+  } catch (error) {
+    context.log.error('ooops', error.message);
+
+    respond(error.statusCode, error);
+  }
 };
