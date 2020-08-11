@@ -6,7 +6,6 @@ const {
   Credentials,
 } = require('@streetcred.id/service-clients');
 const config = require('../config.json');
-const { createLogicalAnd, ExitStatus } = require('typescript');
 const SUBKEY = config.SUBKEY;
 
 // "route": "connection"
